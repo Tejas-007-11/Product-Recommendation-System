@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Product Recommendations</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+h1 {
+  color: #667eea;
+  font-size: 2.5em;
+  margin-bottom: 10px;
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 40px;
+  font-size: 1.1em;
+}
+
+.search-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 30px;
+  border-radius: 16px;
+  margin-bottom: 40px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.search-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+#userInput {
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1em;
+  background: white;
+  color: #333;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+#userInput:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+#userInput::placeholder {
+  color: #999;
+}
+
+button {
+  padding: 16px 32px;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 12px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.example-queries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.example-chip {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.example-chip:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-container {
+    flex-direction: column;
+  }
+}
+
+.section {
+  background: #f8f9ff;
+  padding: 25px;
+  border-radius: 16px;
+  border: 2px solid #e8ecff;
+}
+
+h2 {
+  color: #667eea;
+  font-size: 1.5em;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon {
+  font-size: 1.2em;
+}
+
+#productList {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.product-item {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid #e8ecff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.product-item:hover {
+  border-color: #667eea;
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.product-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+  font-size: 1.05em;
+}
+
+.product-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.product-price {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+.product-category {
+  background: #e8ecff;
+  color: #667eea;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+#output {
+  min-height: 100px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #667eea;
+  font-size: 1.1em;
+}
+
+.loading-spinner {
+  border: 3px solid #e8ecff;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.recommendation-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  border: 2px solid #e8ecff;
+  transition: all 0.3s ease;
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.recommendation-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  transform: translateY(-4px);
+}
+
+.recommendation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.recommendation-name {
+  font-size: 1.3em;
+  font-weight: 700;
+  color: #333;
+}
+
+.recommendation-price {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.recommendation-meta {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.recommendation-reason {
+  color: #666;
+  line-height: 1.6;
+  font-size: 0.95em;
+  padding: 12px;
+  background: #f8f9ff;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.no-results-icon {
+  font-size: 3em;
+  margin-bottom: 15px;
+}
+
+.error-message {
+  background: #ffe8e8;
+  color: #d32f2f;
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid #d32f2f;
+  margin-top: 15px;
+}
+
+.ai-insight {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 15px;
+  line-height: 1.6;
+}
+
+.ai-insight strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.1em;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🤖 AI Product Recommendations</h1>
+  <p class="subtitle">Powered by Gemini AI - Find your perfect product</p>
+
+  <div class="search-section">
+    <div class="search-container">
+      <input 
+        id="userInput" 
+        type="text" 
+        placeholder="Example: I want a phone under $500 with good camera"
+        autocomplete="off"
+      >
+      <button id="searchBtn" onclick="getRecommendations()">
+        🔍 Search
+      </button>
+    </div>
+    <div class="example-queries">
+      <div class="example-chip" onclick="setQuery('phone under $500')">📱 Phone under $500</div>
+      <div class="example-chip" onclick="setQuery('best laptop for work')">💻 Best laptop for work</div>
+      <div class="example-chip" onclick="setQuery('affordable headphones')">🎧 Affordable headphones</div>
+      <div class="example-chip" onclick="setQuery('premium devices')">⭐ Premium devices</div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div class="section">
+      <h2><span class="icon">📦</span> Available Products</h2>
+      <ul id="productList"></ul>
+    </div>
+
+    <div class="section">
+      <h2><span class="icon">✨</span> AI Recommendations</h2>
+      <div id="output">
+        <div class="no-results">
+          <div class="no-results-icon">🎯</div>
+          <p>Enter your preferences above to get personalized recommendations</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const products = [
+  { name: "iPhone 14", price: 799, category: "phone", features: "Advanced camera, A15 chip, 5G" },
+  { name: "Samsung Galaxy A54", price: 450, category: "phone", features: "Great value, AMOLED display, 5G" },
+  { name: "Redmi Note 12", price: 250, category: "phone", features: "Budget friendly, good battery" },
+  { name: "MacBook Air M2", price: 1199, category: "laptop", features: "Powerful M2 chip, lightweight, long battery" },
+  { name: "Dell Inspiron 15", price: 699, category: "laptop", features: "Good for work, reliable, expandable" },
+  { name: "Sony WH-1000XM5", price: 349, category: "headphones", features: "Best noise cancellation, premium sound" },
+  { name: "AirPods Pro", price: 249, category: "headphones", features: "Apple ecosystem, ANC, portable" },
+  { name: "Google Pixel 7", price: 599, category: "phone", features: "Excellent camera, pure Android, AI features" }
+];
+
+const list = document.getElementById("productList");
+products.forEach(p => {
+  const li = document.createElement('li');
+  li.className = 'product-item';
+  li.innerHTML = `
+    <div class="product-name">${p.name}</div>
+    <div style="color: #666; font-size: 0.9em; margin: 5px 0;">${p.features}</div>
+    <div class="product-details">
+      <span class="product-price">$${p.price}</span>
+      <span class="product-category">${p.category}</span>
+    </div>
+  `;
+  list.appendChild(li);
+});
+
+function setQuery(query) {
+  document.getElementById('userInput').value = query;
+  getRecommendations();
+}
+
+async function getRecommendations() {
+  const userInput = document.getElementById('userInput').value.trim();
+  const output = document.getElementById('output');
+  const searchBtn = document.getElementById('searchBtn');
+  
+  if (!userInput) {
+    output.innerHTML = `
+      <div class="error-message">
+        Please enter your preferences to get recommendations
+      </div>
+    `;
+    return;
+  }
+
+  searchBtn.disabled = true;
+  searchBtn.textContent = '⏳ Searching...';
+  
+  output.innerHTML = `
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <p>AI is analyzing products...</p>
+    </div>
+  `;
+
+  const prompt = `You are a product recommendation expert. Analyze the user's request and recommend the BEST matching products from the list.
+
+User Request: "${userInput}"
+
+Available Products:
+${products.map((p, i) => `${i + 1}. ${p.name} - $${p.price} - ${p.category} - ${p.features}`).join('\n')}
+
+Instructions:
+1. Recommend 1-3 products that BEST match the user's criteria
+2. Consider price range, category, and features
+3. Provide a brief reason for each recommendation
+
+Respond in this EXACT JSON format (no markdown, no extra text):
+{
+  "recommendations": [
+    {
+      "name": "Product Name",
+      "reason": "Why this product matches the user's needs"
+    }
+  ],
+  "insight": "A brief overall insight about the recommendations"
+}`;
+
+  try {
+    const API_KEY = "<YOUR_API_KEY>"; // Your Gemini API key
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [
+          { 
+            parts: [{ text: prompt }] 
+          }
+        ]
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`API Error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.candidates[0].content.parts[0].text;
+    
+    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+    const parsed = JSON.parse(cleanText);
+
+    if (!parsed.recommendations || parsed.recommendations.length === 0) {
+      output.innerHTML = `
+        <div class="no-results">
+          <div class="no-results-icon">😕</div>
+          <p>No products match your criteria. Try a different search!</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    
+    parsed.recommendations.forEach((rec, index) => {
+      const product = products.find(p => p.name === rec.name);
+      if (product) {
+        html += `
+          <div class="recommendation-card" style="animation-delay: ${index * 0.1}s">
+            <div class="recommendation-header">
+              <div class="recommendation-name">${product.name}</div>
+              <div class="recommendation-price">$${product.price}</div>
+            </div>
+            <div class="recommendation-meta">
+              <span class="product-category">${product.category}</span>
+            </div>
+            <div style="color: #666; font-size: 0.9em; margin-bottom: 10px;">${product.features}</div>
+            <div class="recommendation-reason">
+              <strong>Why recommended:</strong> ${rec.reason}
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    if (parsed.insight) {
+      html += `
+        <div class="ai-insight">
+          <strong>💡 AI Insight:</strong>
+          ${parsed.insight}
+        </div>
+      `;
+    }
+
+    output.innerHTML = html;
+
+  } catch (err) {
+    console.error(err);
+    output.innerHTML = `
+      <div class="error-message">
+        <strong>Error:</strong> Unable to get recommendations. Please try again.
+        <br><small>${err.message}</small>
+      </div>
+    `;
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = '🔍 Search';
+  }
+}
+
+document.getElementById('userInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    getRecommendations();
+  }
+});
+</script>
+
+</body>
+</html>
